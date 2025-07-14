@@ -49,7 +49,7 @@ def run_process(cmd_list):
 # -----------------------------------------------------------------------------
 
 def run_installer():
-    cmd = [sys.executable, "openvoice_installer.py", "--dir", install_dir_var.get()]
+    cmd = [sys.executable, "install_openvoice_full.py", "--dir", install_dir_var.get()]
     run_process(cmd)
 
 
@@ -262,7 +262,7 @@ tk.Button(top, text="Generate Full Audio", command=generate_audio).grid(row=5, c
 # column weights for nicer resizing -------------------------------------------
 
 top.columnconfigure(1, weight=1)
-	top.columnconfigure(3, weight=1)
+top.columnconfigure(3, weight=1)
 
 # -----------------------------------------------------------------------------
 # Scroll‑back log
