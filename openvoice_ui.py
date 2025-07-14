@@ -7,9 +7,11 @@ This launcher lets you:
   • Call the long‑form synthesiser (`long_synth.py`)
   • Extract timbre embeddings, preview a single sentence and generate full audio
 
-It expects the helper scripts (long_synth.py, extract_se.py, say.py …) to live
-next to this file. The installer puts copies of them in your chosen directory
-and also copies itself so you can re‑install later.
+It expects the helper scripts (``long_synth.py``, ``extract_se.py``,
+``say.py`` …) to live next to this file. The **Run Installer** button now runs
+``install_openvoice_full.py`` which installs Conda if needed, creates the
+required environment and copies the helpers into the directory you choose so you
+can re-run them later.
 """
 import tkinter as tk
 from tkinter import filedialog, scrolledtext, simpledialog

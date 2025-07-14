@@ -1,8 +1,10 @@
 # Openvoice-pack
 
-Helper utilities for MyShell-AI OpenVoice V2. The installer script only writes the helper programs and does **not** automatically install Conda, Git, Python or PyTorch. Install those requirements manually before using the helpers.
+Helper utilities for MyShell-AI OpenVoice V2. The installer now downloads
+Miniconda if needed, creates an ``openvoice`` environment and installs Git,
+Python and PyTorch automatically.
 
-The installer also drops `long_synth.py`—a helper for long-form voice generation **and copies itself into the chosen directory so you can rerun it later**. After installation you can run:
+Use `install_openvoice_full.py` to copy the helper scripts into your desired directory. This is the same command run by the **Run Installer** button in `openvoice_ui.py`. The script also copies itself so you can rerun it later. After installation you can run:
 
 ```bash
 conda activate openvoice
