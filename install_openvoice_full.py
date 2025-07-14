@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
+"""Write helper scripts used with OpenVoice.
+
+This installer does **not** install Conda, Git, Python, PyTorch or other
+requirements. It simply copies the utility programs into the chosen directory
+so you can activate your environment and run the helpers right away.
+"""
 from pathlib import Path
+import argparse
 
 GREEN = "\033[92m"
 CYAN = "\033[96m"
@@ -7,8 +14,8 @@ YELLOW = "\033[93m"
 RESET = "\033[0m"
 
 
-def write_long_synth():
-    """Write helper script for long-form synthesis (placeholder)."""
+def write_long_synth(dest: Path) -> None:
+    """Write helper script for long‑form synthesis."""
     code = '''#!/usr/bin/env python3
 import argparse
 from pathlib import Path
@@ -32,18 +39,21 @@ def main():
 if __name__ == "__main__":
     main()
 '''
-    Path('long_synth.py').write_text(code)
-    print(f"{GREEN}long_synth.py written{RESET}")
+    (dest / "long_synth.py").write_text(code)
+    print(f"{GREEN}long_synth.py written to {dest}{RESET}")
 
 
-def write_openvoice_ui():
-    """Copy GUI launcher into workspace."""
-    code = Path('openvoice_ui.py').read_text()
-    Path('openvoice_ui.py').write_text(code)
-    print(f"{GREEN}openvoice_ui.py written{RESET}")
+def write_openvoice_ui(dest: Path) -> None:
+    """Copy GUI launcher into destination directory."""
+    src = Path(__file__).with_name("openvoice_ui.py")
+    if not src.exists():
+        print(f"{YELLOW}openvoice_ui.py not found next to installer – skipped{RESET}")
+        return
+    (dest / "openvoice_ui.py").write_text(src.read_text())
+    print(f"{GREEN}openvoice_ui.py written to {dest}{RESET}")
 
 
-def write_extract_se():
+def write_extract_se(dest: Path) -> None:
     """Write helper for timbre extraction."""
     code = '''#!/usr/bin/env python3
 from pathlib import Path
@@ -52,26 +62,26 @@ from openvoice.api import ToneColorConverter
 
 p = argparse.ArgumentParser()
 p.add_argument("wav", help="Reference WAV/MP3")
-p.add_argument("-n","--name", default=None, help="Name for embedding")
+p.add_argument("-n", "--name", default=None, help="Name for embedding")
 args = p.parse_args()
 
 ckpt = Path("OpenVoice/checkpoints_v2/converter")
-conv = ToneColorConverter(str(ckpt/"config.json"))
-conv.load_ckpt(str(ckpt/"checkpoint.pth"))
+conv = ToneColorConverter(str(ckpt / "config.json"))
+conv.load_ckpt(str(ckpt / "checkpoint.pth"))
 
 emb, _ = conv.get_tone_embedding(args.wav)
 name = (args.name or Path(args.wav).stem)
 out = Path("OpenVoice/checkpoints_v2/custom_ses")
 out.mkdir(parents=True, exist_ok=True)
-torch.save(emb, out/f"{name}.pth")
-print("Saved embedding \u2192", out/f"{name}.pth")
+torch.save(emb, out / f"{name}.pth")
+print("Saved embedding →", out / f"{name}.pth")
 '''
-    Path('extract_se.py').write_text(code)
-    print(f"{GREEN}extract_se.py written{RESET}")
+    (dest / "extract_se.py").write_text(code)
+    print(f"{GREEN}extract_se.py written to {dest}{RESET}")
 
 
-def write_say():
-    """Write CLI to generate audio from text and embeddings."""
+def write_say(dest: Path) -> None:
+    """Write CLI that generates audio from text and embeddings."""
     code = '''#!/usr/bin/env python3
 import argparse, tempfile
 from pathlib import Path
@@ -80,25 +90,25 @@ from melo.api import TTS
 from openvoice.api import ToneColorConverter
 
 p = argparse.ArgumentParser()
-p.add_argument("--text",   required=True, help="Text to speak")
-p.add_argument("--voice",  required=True, help="Embedding name (no .pth)")
-p.add_argument("--base",   default="en_default", help="Base speaker token")
-p.add_argument("--lang",   default="EN", help="Language code")
-p.add_argument("--speed",  type=float, default=1.0, help="0.7–1.3×")
+p.add_argument("--text", required=True, help="Text to speak")
+p.add_argument("--voice", required=True, help="Embedding name (no .pth)")
+p.add_argument("--base", default="en_default", help="Base speaker token")
+p.add_argument("--lang", default="EN", help="Language code")
+p.add_argument("--speed", type=float, default=1.0, help="0.7–1.3×")
 p.add_argument("--rhythm", type=float, default=1.0, help="0.5–1.5×")
 p.add_argument("--normalize", action="store_true", help="Normalize volume")
-p.add_argument("--out",    default="out.wav", help="Output file")
+p.add_argument("--out", default="out.wav", help="Output file")
 args = p.parse_args()
 
 CKPT = Path("OpenVoice/checkpoints_v2")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 tts = TTS(language=args.lang, device=device)
-conv = ToneColorConverter(str(CKPT/"converter"/"config.json"), device=device)
-conv.load_ckpt(str(CKPT/"converter"/"checkpoint.pth"))
+conv = ToneColorConverter(str(CKPT / "converter" / "config.json"), device=device)
+conv.load_ckpt(str(CKPT / "converter" / "checkpoint.pth"))
 
-src = torch.load(str(CKPT/"base_speakers"/"ses"/f"{args.base}.pth"), map_location=device)
-tgt = torch.load(str(CKPT/"custom_ses"/f"{args.voice}.pth"), map_location=device)
+src = torch.load(str(CKPT / "base_speakers" / "ses" / f"{args.base}.pth"), map_location=device)
+tgt = torch.load(str(CKPT / "custom_ses" / f"{args.voice}.pth"), map_location=device)
 
 with tempfile.NamedTemporaryFile(suffix=".wav") as tmp:
     tts.tts_to_file(args.text, tts.hps.data.spk2id[args.base], tmp.name,
@@ -106,24 +116,40 @@ with tempfile.NamedTemporaryFile(suffix=".wav") as tmp:
     conv.convert(tmp.name, src, tgt, args.out,
                  rhythm_scale=args.rhythm,
                  normalize_volume=args.normalize)
-print("Generated \u2192", args.out)
+print("Generated →", args.out)
 '''
-    Path('say.py').write_text(code)
-    print(f"{GREEN}say.py written{RESET}")
+    (dest / "say.py").write_text(code)
+    print(f"{GREEN}say.py written to {dest}{RESET}")
 
 
-def main():
+def copy_self(dest: Path) -> None:
+    """Place a copy of this installer inside the destination directory."""
+    src = Path(__file__)
+    (dest / src.name).write_text(src.read_text())
+    print(f"{GREEN}{src.name} copied to {dest}{RESET}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Install OpenVoice helpers")
+    parser.add_argument("--dir", default=".", help="Installation directory")
+    args = parser.parse_args()
+
+    dest = Path(args.dir).expanduser().resolve()
+    dest.mkdir(parents=True, exist_ok=True)
+
     print(f"{CYAN}--- OpenVoice V2 Installer ---{RESET}")
-    write_long_synth()
-    write_openvoice_ui()
-    write_extract_se()
-    write_say()
-    print(f"{GREEN}Installation complete!{RESET}")
+    write_long_synth(dest)
+    write_openvoice_ui(dest)
+    write_extract_se(dest)
+    write_say(dest)
+    copy_self(dest)
+
+    print(f"{GREEN}Installation complete in {dest}!{RESET}")
     print("To launch the demo:")
     print(f"{YELLOW}conda activate openvoice{RESET}")
     print(f"{YELLOW}python -m openvoice_app --share{RESET}")
-    print(f"{YELLOW}python long_synth.py input.txt reference.wav output.wav{RESET}")
-    print(f"{YELLOW}python openvoice_ui.py{RESET}")
+    print(f"{YELLOW}python {dest / 'long_synth.py'} input.txt reference.wav output.wav{RESET}")
+    print(f"{YELLOW}python {dest / 'openvoice_ui.py'}{RESET}")
 
 
 if __name__ == "__main__":
