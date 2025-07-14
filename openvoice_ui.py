@@ -7,9 +7,11 @@ This launcher lets you:
   • Call the long‑form synthesiser (`long_synth.py`)
   • Extract timbre embeddings, preview a single sentence and generate full audio
 
-It expects the helper scripts (long_synth.py, extract_se.py, say.py …) to live
-next to this file. The installer puts copies of them in your chosen directory
-and also copies itself so you can re‑install later.
+It expects the helper scripts (``long_synth.py``, ``extract_se.py``,
+``say.py`` …) to live next to this file. The **Run Installer** button now runs
+``install_openvoice_full.py`` which installs Conda if needed, creates the
+required environment and copies the helpers into the directory you choose so you
+can re-run them later.
 """
 import tkinter as tk
 from tkinter import filedialog, scrolledtext, simpledialog
@@ -49,7 +51,7 @@ def run_process(cmd_list):
 # -----------------------------------------------------------------------------
 
 def run_installer():
-    cmd = [sys.executable, "openvoice_installer.py", "--dir", install_dir_var.get()]
+    cmd = [sys.executable, "install_openvoice_full.py", "--dir", install_dir_var.get()]
     run_process(cmd)
 
 
@@ -262,7 +264,7 @@ tk.Button(top, text="Generate Full Audio", command=generate_audio).grid(row=5, c
 # column weights for nicer resizing -------------------------------------------
 
 top.columnconfigure(1, weight=1)
-	top.columnconfigure(3, weight=1)
+top.columnconfigure(3, weight=1)
 
 # -----------------------------------------------------------------------------
 # Scroll‑back log

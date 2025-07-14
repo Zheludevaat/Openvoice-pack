@@ -1,17 +1,41 @@
 #!/usr/bin/env python3
-"""Write helper scripts used with OpenVoice.
+"""Write helper scripts used with OpenVoice and set up the environment.
 
-This installer does **not** install Conda, Git, Python, PyTorch or other
-requirements. It simply copies the utility programs into the chosen directory
-so you can activate your environment and run the helpers right away.
+The installer now attempts to install Conda (via Miniconda) and create an
+``openvoice`` environment with all Python requirements. The helper utilities are
+copied into the chosen directory so you can run them immediately after the
+installation completes.
 """
 from pathlib import Path
 import argparse
+import subprocess
+import shutil
+import sys
 
 GREEN = "\033[92m"
 CYAN = "\033[96m"
 YELLOW = "\033[93m"
 RESET = "\033[0m"
+
+
+def setup_environment() -> None:
+    """Install Miniconda and required Python packages if needed."""
+    conda = shutil.which("conda")
+    if not conda:
+        print(f"{YELLOW}Conda not found. Installing Miniconda...{RESET}")
+        url = "https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
+        installer = Path("miniconda.sh")
+        subprocess.run(["curl", "-L", url, "-o", str(installer)], check=True)
+        subprocess.run(["bash", str(installer), "-b", "-p", str(Path.home() / "miniconda")], check=True)
+        conda = str(Path.home() / "miniconda" / "bin" / "conda")
+    env = "openvoice"
+    print(f"{CYAN}Creating Conda environment '{env}'{RESET}")
+    subprocess.run([conda, "create", "-y", "-n", env, "python=3.10"], check=True)
+    subprocess.run([conda, "install", "-y", "-n", env, "git"], check=True)
+    print(f"{CYAN}Installing Python requirements{RESET}")
+    subprocess.run([conda, "run", "-n", env, "pip", "install",
+                    "torch", "torchaudio",
+                    "git+https://github.com/MyShellAI/OpenVoice.git"], check=True)
 
 
 def write_long_synth(dest: Path) -> None:
@@ -138,6 +162,7 @@ def main() -> None:
     dest.mkdir(parents=True, exist_ok=True)
 
     print(f"{CYAN}--- OpenVoice V2 Installer ---{RESET}")
+    setup_environment()
     write_long_synth(dest)
     write_openvoice_ui(dest)
     write_extract_se(dest)
@@ -145,7 +170,7 @@ def main() -> None:
     copy_self(dest)
 
     print(f"{GREEN}Installation complete in {dest}!{RESET}")
-    print("To launch the demo:")
+    print("Environment 'openvoice' created. To launch the demo:")
     print(f"{YELLOW}conda activate openvoice{RESET}")
     print(f"{YELLOW}python -m openvoice_app --share{RESET}")
     print(f"{YELLOW}python {dest / 'long_synth.py'} input.txt reference.wav output.wav{RESET}")
